@@ -2,3 +2,5 @@
 venv/
 all_tools.txt
 observations.txt
+__pycache__/
+*.pyc

@@ -6,7 +6,6 @@ from langchain_groq import ChatGroq
 from langchain_nvidia_ai_endpoints import ChatNVIDIA
 
 
-
 load_dotenv()
 
 
@@ -61,4 +60,31 @@ INVESTIGATION_MODEL = ChatNVIDIA(
 
 
 
+GITHUB_READ_TOOLS = [
+    "pull_request_read",
+    "list_pull_requests",
+    "get_commit",
+    "list_commits",
+    "get_file_contents",
+    "search_code",
+    "search_commits",
+    "search_pull_requests",
+    "search_issues",
+    "issue_read",
+    "list_branches",
+]
 
+SLACK_READ_TOOLS = [
+    "slack_list_channels",
+    "slack_get_channel_history",
+    "slack_get_thread_replies",
+    "slack_get_users",
+    "slack_get_user_profile",
+]
+
+CICD_TOOLS = [
+    "actions_get",
+    "actions_list",
+    "get_job_logs",
+    "get_commit",
+]
