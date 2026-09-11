@@ -40,10 +40,9 @@ FINAL_MODEL = ChatGroq(
     max_retries=3
 )
 
-GITHUB_MODEL = ChatNVIDIA(
-    model="nvidia/nemotron-3-nano-omni-30b-a3b-reasoning",
-    temperature=0.6,
-    api_key=NVIDIA_API_KEY
+GITHUB_MODEL = ChatGroq(
+    model="openai/gpt-oss-120b",
+    max_retries=3
 )
 
 CI_CD_MODEL = ChatNVIDIA(
