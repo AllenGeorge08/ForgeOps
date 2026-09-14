@@ -1,7 +1,9 @@
 from langchain_mcp_adapters.client import MultiServerMCPClient
 import asyncio 
 import os 
-from app.config.config import GITHUB_MODEL
+from dotenv import load_dotenv
+
+load_dotenv()
 
 
 GITHUB_ACCESS_TOKEN = os.getenv("GITHUB_ACCESS_TOKEN")
