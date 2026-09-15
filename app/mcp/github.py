@@ -1,5 +1,4 @@
 import asyncio
-from curses import raw
 import json 
 from app.mcp.client import select_tools,client
 from app.config.config import GITHUB_READ_TOOLS
@@ -156,21 +155,50 @@ class GithubTools:
 
 
     # Later
-    # async def search_code(self,search_term: str,owner:str=None,repo: str=None):
-    #     query = [search_term]
+    async def search_code(self,search_term: str,owner:str=None,repo: str=None,language:str=None,path:str=None,extension:str=None):
+      
+        if not search_term:
+            raise ValueError("Missing Search Term")
 
-    #     if owner and repo:
-    #         query.append(f"repo:{owner}/{repo}")
-    #     elif owner:
-    #         query.append(f"user:{owner}")
-    
-    #     full_query = "".join(query)
+        query_parts = [search_term]
 
-    #     tool = [tool for tool in self.github_tools if tool.name == "search_code"]
-    #     results = await tool[0].ainvoke({
-    #         "query": full_query
-    #     })
-    #     return results
+        if owner and repo:
+            query_parts.append(f"repo:{owner}/{repo}")
+        elif owner:
+            query_parts.append(f"user:{owner}")
+
+        
+        if language:
+            query_parts.append(f"language:{language}")
+        if path: 
+            query_parts.append(f"path:{path}")
+        if extension:
+            query_parts.append(f"extension:{extension}")
+
+        full_query = " ".join(query_parts)
+        print(f"DEBUG query: {full_query!r}") 
+
+        tool = [tool for tool in self.github_tools if tool.name == "search_code"]
+        results = await tool[0].ainvoke({
+            "query": full_query,
+            "perPage": 10
+        })
+        contents = json.loads(results[0]["text"])
+        final_data = []
+        for item in contents.get("items",[]):
+            fragments = [
+                m.get("fragment") for m in item.get("text_matches",[]) if m.get("fragment")
+            ]
+            return_data = {
+                "name": item.get("name"),
+                "path": item.get("path"),
+                "sha": item.get("sha"),
+                "repository": item.get("repository"),
+                "match_count": sum(len(m.get("matches",[])) for m in item.get("text_matches",[])),
+                "fragments": fragments
+            }
+            final_data.append(return_data)
+        return final_data  
 
     async def search_pull_requests(self,search_term: str,owner: str=None,repo:str=None):
         
@@ -274,7 +302,5 @@ github = GithubTools(results)
 # print(asyncio.run(github.issue_read("AllenGeorge08","TestRepo",3,"get_comments"))) 
 # print(asyncio.run(github.issue_read("AllenGeorge08","TestRepo",3))) #default = get,get_sub_issues,get_parent,get_label 
 
-
-
-    
-
+# print(asyncio.run(github.search_code('MultiServerMCP',owner="AllenGeorge08",repo="ForgeOps",language="python",path="app"))) #not indexd well
+print(asyncio.run(github.search_code("import",owner="wassim249",repo="fastapi-langgraph-agent-production-ready-template",language="python")))

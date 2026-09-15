@@ -55,20 +55,27 @@ def select_tools(all_tools,allowed_names):
     return [tool for tool in all_tools if tool.name in allowed_names]
 
 
-# async def main():
-#     tools = await client.get_tools()
-#     # agent = GITHUB_MODEL.bind_tools(tools)
-#     # response = agent.invoke(
-#     #     "List the open Pull requests in my repository ForgeOps"
-#     # )
-#     # print(response.content)
-#     tool_names = []
-#     for tool in tools:
-#         tool_names.append(tool.name)
-#     # action_tools = [t.name for t in tools if "actions" in t.name]
-#     # print(action_tools)
-#     # regular_tools = [t.name for t in tools if "actions" not in t.name]
-#     # print(regular_tools)
-#     print(tool_names)
+async def main():
+    tools = await client.get_tools()
+    # agent = GITHUB_MODEL.bind_tools(tools)
+    # response = agent.invoke(
+    #     "List the open Pull requests in my repository ForgeOps"
+    # )
+    # print(response.content)
+    tool_names = []
+    for tool in tools:
+        payload = {
+            "tool_name": tool.name,
+            "tool_args":[t for t in tool.args]
+        }
+        tool_names.append(payload)
+    # action_tools = [t.name for t in tools if "actions" in t.name]
+    # print(action_tools)
+    # regular_tools = [t._a for t in tools if "actions" not in t.name]
+    # print(regular_tools)
+    for tool in tools:
+        print("-"*10)
+        print(tool)
 
 
+# asyncio.run(main())
