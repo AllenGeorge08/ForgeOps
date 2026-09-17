@@ -4,6 +4,7 @@ import os
 
 from langchain_groq import ChatGroq
 from langchain_nvidia_ai_endpoints import ChatNVIDIA
+from langchain_core.rate_limiters import InMemoryRateLimiter
 
 
 load_dotenv()
@@ -23,8 +24,14 @@ except PermissionError:
     print("ERROR: NVIDIA API KEY NOT FOUND")
 
 
+guardrail_rate_limiter = InMemoryRateLimiter(
+    requests_per_second=1.0,
+    check_every_n_seconds=0.005,#pooll every 1 ms to reduce execution latency
+    max_bucket_size=5 #tight burst 
+)
+
 # All working,tested
-GUARDRAIL_MODEL = ChatGroq(model="qwen/qwen3.8-27b", max_retries=3)
+GUARDRAIL_MODEL = ChatGroq(model="qwen/qwen3.8-27b", max_retries=3, rate_limiter=guardrail_rate_limiter,max_tokens=300,reasoning_effort="low")
 
 SUPERVISER_MODEL = ChatGroq(model="openai/gpt-oss-20b", max_retries=3)
 

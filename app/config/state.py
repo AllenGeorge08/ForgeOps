@@ -1,5 +1,22 @@
 from pydantic import BaseModel,Field 
-from typing import Any 
+from typing import Any,Literal
+
+class GuardrailDecision(BaseModel):
+    decision: Literal["allow", "reject", "clarify"]
+    category: Literal[
+        "github",
+        "slack",
+        "ci_cd",
+        "cross_source_investigation",
+        "general_engineering",
+        "out_of_scope",
+        "unsupported_action",
+        "ambiguous",
+        "unsafe",
+    ]
+
+    reason: str
+
 
 class QueryRequest(BaseModel):
     user_query: str = Field(gt=0,description="User query cannot be empty")
