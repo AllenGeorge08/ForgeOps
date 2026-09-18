@@ -1,8 +1,5 @@
-from shlex import join
 from datasets import guardrail_dataset
-
-import json 
-import time 
+from app.config.state import ForgeOpsState
 import pytest 
 from app.guardrails.guardrails import evaluate_user_query
 
@@ -11,7 +8,9 @@ def test_guardrail_agent(item):
     query = item["user_query"]
     expected = item["expected"]
 
-    response = evaluate_user_query(query)
+    state = ForgeOpsState(user_query=query,thread_id="Test Thread")
+
+    response = evaluate_user_query(state)
 
     assert response.decision == expected["decision"], (
         f"Decision mismatch! Expected {expected['decision']}, got {response.decision}. "

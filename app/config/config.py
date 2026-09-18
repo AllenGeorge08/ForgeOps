@@ -35,7 +35,8 @@ GUARDRAIL_MODEL = ChatGroq(model="qwen/qwen3.8-27b", max_retries=3, rate_limiter
 
 SUPERVISER_MODEL = ChatGroq(model="openai/gpt-oss-20b", max_retries=3)
 
-FINAL_MODEL = ChatGroq(model="openai/gpt-oss-20b", max_retries=3)
+FINAL_MODEL = ChatGroq(model="qwen/qwen3.8-27b", max_retries=3)
+MEMORY_MODEL= ChatGroq(model="qwen/qwen3.8-27b", max_retries=3)
 
 GITHUB_MODEL = ChatGroq(model="openai/gpt-oss-120b", max_retries=3)
 
@@ -44,6 +45,14 @@ CI_CD_MODEL = ChatNVIDIA(
     temperature=0.6,
     api_key=NVIDIA_API_KEY,
 )
+
+# MEMORY_MODEL = ChatNVIDIA(
+#     model="nvidia/nemotron-3-nano-omni-30b-a3b-reasoning",
+#     temperature=0.6,
+#     api_key=NVIDIA_API_KEY,
+# )
+
+
 
 # Need a stronger model here
 INVESTIGATION_MODEL = ChatNVIDIA(

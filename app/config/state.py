@@ -1,6 +1,25 @@
 from pydantic import BaseModel,Field 
 from typing import Any,Literal
 
+
+
+class Memory(BaseModel):
+    content: str
+    category: Literal[
+        "engineering_environment",
+        "repository_context",
+        "deployment_context",
+        "team_context",
+        "user_preference",
+    ]
+
+
+class MemoryDecision(BaseModel):
+    should_store: bool
+    memories: list[Memory] = Field(default_factory=list)
+    reason: str
+
+
 class GuardrailDecision(BaseModel):
     decision: Literal["allow", "reject", "clarify"]
     category: Literal[
@@ -17,6 +36,14 @@ class GuardrailDecision(BaseModel):
 
     reason: str
 
+#  Let's check format: Summary, Root Cause, Evidence, Recommended Action
+class FinalizeAgentResponse(BaseModel):
+    summary: str 
+    root_cause: str 
+    evidence: list[str]
+    recommended_action: list[str]
+    limitations: list[str] | None=None 
+
 
 class QueryRequest(BaseModel):
     user_query: str = Field(gt=0,description="User query cannot be empty")
@@ -26,7 +53,7 @@ class Finding(BaseModel):
     summary: str= ""
     evidence: list[str] = Field(default_factory=list)
     source_refs: list[str] = Field(default_factory=list)
-    errors: list[str] = Field(default_factory=list)
+    errors: list[str] | None = Field(default_factory=list)
 
 
 class ProposedAction(BaseModel):
@@ -55,14 +82,11 @@ class ForgeOpsState(BaseModel):
     root_cause: str  = ""
     evidence: list[str] = Field(default_factory=list)
 
-
     proposed_action: ProposedAction | None = None
-    human_approved: bool = False
-    human_feedback: str = ""
 
     final_response: str = ""
     errors: list[str]  = Field(default_factory=list)
-    memory_context: list[str] = Field(default_factory=list)
+    memory_context: list[str]| None = None 
 
 
 
