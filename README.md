@@ -52,5 +52,16 @@ Running Tests:
 pytest tests/agents/ -s -v
 ```
 
+# Docker Instructions
 
+```
+docker build -t my-ollama-image
+```
 
+```
+docker run -p -d 11434:11434 --name ollama-container my-ollama-image
+```
+
+```
+docker pull  qdrant/qdrant  
+```

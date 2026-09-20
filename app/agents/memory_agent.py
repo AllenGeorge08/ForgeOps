@@ -35,9 +35,7 @@ def memory_agent(state: ForgeOpsState):
         memory_strings = [f"Context: {memory.content} Category: {memory.category}"    for memory in result.memories]
         state.memory_context.append(memory_strings)
         
-        # store the category in mem0
-
-
+    # store the category in mem0
     return result 
 
 
