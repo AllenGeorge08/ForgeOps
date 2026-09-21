@@ -233,11 +233,21 @@ class GithubTools:
             final_result.append(return_data)
         return final_result
 
-    # Later
-    async def search_code(self,search_term: str,owner:str=None,repo: str=None,language:str=None,path:str=None,extension:str=None):
-      
+    async def search_code(
+        self,
+        search_term: str,
+        owner: str = None,
+        repo: str = None,
+        language: str = None,
+        path: str = None,
+        extension: str = None,
+        per_page: int = 2,
+    ):
         if not search_term:
             raise ValueError("Missing Search Term")
+
+        if not 1 <= per_page <= 100:
+            raise ValueError("per_page must be between 1 and 100")
 
         query_parts = [search_term]
 
@@ -246,39 +256,56 @@ class GithubTools:
         elif owner:
             query_parts.append(f"user:{owner}")
 
-        
         if language:
             query_parts.append(f"language:{language}")
-        if path: 
+        if path:
             query_parts.append(f"path:{path}")
         if extension:
             query_parts.append(f"extension:{extension}")
 
         full_query = " ".join(query_parts)
-        print(f"DEBUG query: {full_query!r}") 
 
-        tool = [tool for tool in self.github_tools if tool.name == "search_code"]
-        results = await tool[0].ainvoke({
-            "query": full_query,
-            "perPage": 10
-        })
+        tool = [t for t in self.github_tools if t.name == "search_code"]
+        if not tool:
+            raise ValueError("search_code tool not found. Add it to GITHUB_READ_TOOLS")
+
+        results = await tool[0].ainvoke({"query": full_query, "perPage": per_page})
         contents = json.loads(results[0]["text"])
+
         final_data = []
-        for item in contents.get("items",[]):
-            fragments = [
-                m.get("fragment") for m in item.get("text_matches",[]) if m.get("fragment")
-            ]
+        for item in contents.get("items", []):
+            text_matches = item.get("text_matches") or []
+
+            # dedupe while keeping order, strip whitespace, cap length
+            seen = set()
+            fragments = []
+            for m in text_matches:
+                frag = (m.get("fragment") or "").strip()
+                if frag and frag not in seen:
+                    seen.add(frag)
+                    fragments.append(frag[:300])
+
+            # repository can be a plain string or a dict depending on the server
+            repo_info = item.get("repository")
+            repository = repo_info.get("full_name") if isinstance(repo_info, dict) else repo_info
+
             return_data = {
-                "name": item.get("name"),
+                "repository": repository,
                 "path": item.get("path"),
-                "sha": item.get("sha"),
-                "repository": item.get("repository"),
-                "match_count": sum(len(m.get("matches",[])) for m in item.get("text_matches",[])),
-                "fragments": fragments
+                "name": item.get("name"),
+                "url": item.get("html_url")
+                       or (f"https://github.com/{repository}/blob/HEAD/{item.get('path')}" if repository else None),
+                "blob_sha": item.get("sha"),
+                "match_count": sum(len(m.get("matches") or []) for m in text_matches),
+                "fragments": fragments,
             }
             final_data.append(return_data)
-        return final_data  
 
+        return {
+            "query": full_query,
+            "total_count": contents.get("total_count"),
+            "items": final_data,
+        }
     async def search_pull_requests(self,search_term: str,owner: str=None,repo:str=None):
         
         payload = {
