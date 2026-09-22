@@ -4,21 +4,18 @@ from app.mcp.client import select_tools,client
 from app.config.config import CICD_TOOLS
 
 # Internal functions
-async def _get_tools():
-    all_tools  = await client.get_tools()
-    github_tools = select_tools(all_tools,CICD_TOOLS)
-    return github_tools
-    
-    
-results = asyncio.run(_get_tools())
-
 class GithubActions:
-    def __init__(self,github_actions_tools):
-        if not github_actions_tools:
-            raise ValueError("Enter the list of github tools. Call _get_tools()")
+    def __init__(self):
+        self.github_tools  = None
 
-        self.github_tools  = github_actions_tools
+    async def ainit(self):
+        all_tools = await client.get_tools()
+        self.github_tools = select_tools(all_tools, CICD_TOOLS)
+        return self
 
+    def _require_tools(self):
+        if self.github_tools is None:
+            raise RuntimeError("GithubActionsTools not initialized. Call `await githubactions.ainit()` first.")    
 
     async def list_actions(self,method: str,owner: str,repo_name: str,perPage: int = 5):
         if not owner:
@@ -164,12 +161,6 @@ class GithubActions:
 
     
 
-
-
-
-
-
-github_actions = GithubActions(results)
 # print(asyncio.run(github_actions.list_actions('list_workflows',owner="wassim249",repo_name="fastapi-langgraph-agent-production-ready-template")))
 # print(asyncio.run(github_actions.actions_get("get_workflow",owner="wassim249",repo="fastapi-langgraph-agent-production-ready-template",resource_id="ci.yaml")))
 # print(asyncio.run(github_actions.actions_get("get_workflow_run",owner="wassim249",repo="fastapi-langgraph-agent-production-ready-template",resource_id="33086051926")))

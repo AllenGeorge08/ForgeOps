@@ -4,20 +4,19 @@ from app.mcp.client import select_tools,client
 from app.config.config import SLACK_READ_TOOLS
 
 # Internal functions
-async def _get_tools():
-    all_tools  = await client.get_tools()
-    slack_tools = select_tools(all_tools,SLACK_READ_TOOLS)
-    return slack_tools
-
-
-results = asyncio.run(_get_tools())
-
 class SlackTools:
-    def __init__(self,slack_tools):
-        if not slack_tools:
-            raise ValueError("Enter the list of slack tools. Call _get_tools()")
+    def __init__(self):
+        self.slack_tools = None 
 
-        self.slack_tools = slack_tools
+    async def ainit(self):
+        all_tools = await client.get_tools()
+        self.slack_tools = select_tools(all_tools, SLACK_READ_TOOLS)
+        print("Slack tools initialized")
+        return self
+
+    def _require_tools(self):
+        if self.slack_tools is None:
+            raise RuntimeError("SlackTools not initialized. Call `await slack.ainit()` first.")    
 
 
     async def slack_list_channels(self,types: str = None,exclude_archived: bool = False,limit: int = 2):
@@ -159,11 +158,9 @@ class SlackTools:
 
 
 
-slack = SlackTools(results)
-
 # print(asyncio.run(slack.slack_list_channels(limit=10)))
 # print(asyncio.run(slack.get_users()))
-print(asyncio.run(slack.get_thread_replies("C0C16F2L62D","1789954543.416699")))
+# print(asyncio.run(slack.get_thread_replies("C0C16F2L62D","1789954543.416699")))
 
 # print(asyncio.run(slack.get_channel_history(channel_id="C0C16F2L62D")))
 # print(asyncio.run(slack.slack_list_channels(limit=10,types='public_channel')))

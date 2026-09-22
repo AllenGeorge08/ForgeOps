@@ -4,21 +4,19 @@ from app.mcp.client import select_tools,client
 from app.config.config import GITHUB_READ_TOOLS
 
 # Internal functions
-async def _get_tools():
-    all_tools  = await client.get_tools()
-    github_tools = select_tools(all_tools,GITHUB_READ_TOOLS)
-    return github_tools
-    
-    
-results = asyncio.run(_get_tools())
-
-
 class GithubTools:
-    def __init__(self,github_tools):
-        if not github_tools:
-            raise ValueError("Enter the list of github tools. Call _get_tools()")
+    def __init__(self):
+        self.slack_tools = None 
 
-        self.github_tools  = github_tools 
+    async def ainit(self):
+        all_tools = await client.get_tools()
+        self.slack_tools = select_tools(all_tools, GITHUB_READ_TOOLS)
+        print("Github tools initialized")
+        return self
+
+    def _require_tools(self):
+        if self.slack_tools is None:
+            raise RuntimeError("GithubTools not initialized. Call `await github.ainit()` first.")    
 
     
     async def get_commit(self,owner: str,repo_name: str,sha: str):
@@ -87,8 +85,10 @@ class GithubTools:
             "pullNumber": pullNumber 
         })
 
-        print(f"Diff : { result[0]['text']}\n")
-        print(f"Id : {result[0]['id']}")
+        return {
+            "diff": result[0]["text"],
+            "id": result[0]["id"]
+        }
 
 
     async def list_commits(self,owner: str,repo_name: str):
@@ -469,7 +469,7 @@ class GithubTools:
         return final_data
 
         
-github = GithubTools(results)
+github = GithubTools()
 
 # List
 # print(asyncio.run(github.list_branches("AllenGeorge08","TestRepo")))
