@@ -6,16 +6,16 @@ from app.config.config import GITHUB_READ_TOOLS
 # Internal functions
 class GithubTools:
     def __init__(self):
-        self.slack_tools = None 
+        self.github_tools = None 
 
     async def ainit(self):
         all_tools = await client.get_tools()
-        self.slack_tools = select_tools(all_tools, GITHUB_READ_TOOLS)
+        self.github_tools = select_tools(all_tools, GITHUB_READ_TOOLS)
         print("Github tools initialized")
         return self
 
     def _require_tools(self):
-        if self.slack_tools is None:
+        if self.github_tools_tools is None:
             raise RuntimeError("GithubTools not initialized. Call `await github.ainit()` first.")    
 
     

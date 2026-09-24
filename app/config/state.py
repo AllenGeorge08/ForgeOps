@@ -1,8 +1,6 @@
 from pydantic import BaseModel,Field 
 from typing import Any,Literal
 
-
-
 class Memory(BaseModel):
     content: str
     category: Literal[
@@ -50,10 +48,10 @@ class QueryRequest(BaseModel):
     thread_id : int = Field(gt=0,description="The thread id cannot be empty")
 
 class Finding(BaseModel):
-    summary: str= ""
-    evidence: list[str] = Field(default_factory=list)
-    source_refs: list[str] = Field(default_factory=list)
-    errors: list[str] | None = Field(default_factory=list)
+    summary: str= Field(description="Concise statement of what the evidence establishes")
+    evidence: list[str] = Field(default_factory=list,description="Concrete observations retrieved from Github")
+    source_refs: list[str] = Field(default_factory=list,description="e.g 'PR #482,commit b8eafed, Dockerfile")
+    errors: list[str] | None = Field(default_factory=list,description="Tool failures or unavailable info")
 
 
 class ProposedAction(BaseModel):

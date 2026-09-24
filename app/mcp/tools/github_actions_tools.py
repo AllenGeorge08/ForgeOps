@@ -5,7 +5,6 @@ from langchain.tools import tool
 github_actions= asyncio.run(GithubActions().ainit())
 
 
-
 @tool
 async def list_actions(method: str, owner: str, repo_name: str, perPage: int = 5):
     """List GitHub Actions workflows for a repo. Requires owner, repo name, and a method (check your MCP server for valid values, likely 'list_workflows')."""
