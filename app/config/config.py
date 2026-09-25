@@ -2,9 +2,11 @@
 from dotenv import load_dotenv
 import os
 
+from langchain_huggingface import HuggingFaceEndpoint,ChatHuggingFace
 from langchain_groq import ChatGroq
 from langchain_nvidia_ai_endpoints import ChatNVIDIA
 from langchain_core.rate_limiters import InMemoryRateLimiter
+from langchain_ollama import ChatOllama
 
 
 load_dotenv()
@@ -40,13 +42,14 @@ MEMORY_MODEL= ChatGroq(model="qwen/qwen3.8-27b", max_retries=3)
 
 GITHUB_MODEL = ChatGroq(model="openai/gpt-oss-120b", max_retries=3)
 
-CI_CD_MODEL = ChatNVIDIA(
-    model="nvidia/nemotron-3-nano-omni-30b-a3b-reasoning",
-    temperature=0.6,
-    api_key=NVIDIA_API_KEY,
+# CI_CD_MODEL = ChatOllama(model="minimax-m3:cloud", max_retries=3)
+ci_llm = HuggingFaceEndpoint(
+    repo_id="openai/gpt-oss-120b",
+    huggingfacehub_api_token=os.getenv("HF_TOKEN"),
+    provider="auto",
+    task="text_generation"
 )
-
-
+CI_CD_MODEL=ChatHuggingFace(llm=ci_llm)
 
 memoryllm_model = ChatGroq(model="openai/gpt-oss-20b", max_retries=3)
 

@@ -26,7 +26,7 @@ agent = create_agent(
         model=GITHUB_MODEL,
         tools=github_tools,
         system_prompt=GITHUB_AGENT_PROMPT,
-    )
+        ).with_retry(stop_after_attempt=3)
 
 async def github_agent(state: ForgeOpsState,supervisor_query: str):
     result = await agent.ainvoke({
@@ -35,8 +35,13 @@ async def github_agent(state: ForgeOpsState,supervisor_query: str):
     final_text= result["messages"][-1].content
 
     final_answer =  await github_llm.ainvoke(f"Convert this investigation output into the Finding schema. Add nothing new.\n\n{final_text}")
+
+    #what if an error shows up and there's no structured repone
     state.github_findings.append(final_answer)
     return final_answer
+
+
+
   
  
  
