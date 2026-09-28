@@ -4,7 +4,6 @@ from app.config.config import GITHUB_MODEL
 from langchain.agents import create_agent
 from app.mcp.tools.github_tools import get_commit,pull_request_read,list_commits,list_branches,search_code,get_file_contents,list_pull_requests,search_commits,search_issues,issue_read, search_pull_requests 
 from app.agents.prompts import GITHUB_AGENT_PROMPT
-import asyncio 
 
 github_tools = [
     get_commit,
