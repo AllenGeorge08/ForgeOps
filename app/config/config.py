@@ -1,7 +1,6 @@
 # Meta-Muse later
 from dotenv import load_dotenv
 import os
-
 from langchain_huggingface import HuggingFaceEndpoint,ChatHuggingFace
 from langchain_groq import ChatGroq
 from langchain_nvidia_ai_endpoints import ChatNVIDIA
@@ -62,11 +61,7 @@ SLACK_MODEL = ChatGroq(model="openai/gpt-oss-120b", max_retries=3,api_key=GROQ_A
 # )
 
 # Need a stronger model here
-INVESTIGATION_MODEL = ChatNVIDIA(
-    model="nvidia/nemotron-3-ultra-550b-a55b", temperature=0.2, top_p=0.95
-)
-
-
+INVESTIGATION_MODEL = ChatGroq(model="openai/gpt-oss-120b", max_retries=3,api_key=GROQ_API_KEY_2) 
 GITHUB_READ_TOOLS = [
     "pull_request_read",
     "list_pull_requests",

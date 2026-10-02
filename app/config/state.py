@@ -87,5 +87,10 @@ class ForgeOpsState(BaseModel):
     memory_context: list[str]| None = None 
 
 
+class InvestigationResponse(BaseModel):
+    investigation: str = ""
+    root_cause: str  = ""
+    evidence: str = Field(default_factory=str)
+    proposed_action: ProposedAction | None = None
 
 

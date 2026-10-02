@@ -2,11 +2,6 @@ from app.agents.github_ci_agent import ci_cd_agent
 from app.agents.github_agent import github_agent
 from app.config.state import ForgeOpsState,Finding
 import pytest
-import pytest_asyncio
-
-
-# 62e59a49e5b50003523b11ed01929a661863c594
-
 import pytest
 
 from app.config.state import ForgeOpsState, Finding

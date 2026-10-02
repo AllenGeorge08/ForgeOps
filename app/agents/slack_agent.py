@@ -32,7 +32,6 @@ async def slack_agent(state: ForgeOpsState,supervisor_query: str) -> Finding:
        final_text= result["messages"][-1].content
 
        final_answer =  await slack_llm.ainvoke(f"Convert this investigation output into the Finding schema. Add nothing new.\n\n{final_text}")
-
         #what if an error shows up and there's no structured repone
        state.slack_findings.append(final_answer)
        print(state.slack_findings)

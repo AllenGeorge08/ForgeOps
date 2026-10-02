@@ -87,10 +87,6 @@ using the available Slack tools.
 # """
 
 
-# result = asyncio.run(slack_agent(sample_state,supervisor_q))
-# print(result)
-
-
 @pytest.mark.asyncio 
 async def test_slack_agent():
     finding = await slack_agent(sample_state,supervisor_q)
