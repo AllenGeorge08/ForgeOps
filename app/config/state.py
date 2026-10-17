@@ -61,6 +61,25 @@ class ProposedAction(BaseModel):
     parameters: dict[str,Any] = Field(default_factory=dict)
 
 
+class SupervisorDecision(BaseModel):
+    selected_agents: list[str] = Field(
+        default_factory=list,
+        description="Specialist agents to invoke: github, cicd, slack"
+    )
+    investigation_plan: str = Field(
+        default="",
+        description="Overall investigation plan for the specialist team"
+    )
+    agent_queries: dict[str, str] = Field(
+        default_factory=dict,
+        description="Per-agent query strings keyed by agent name"
+    )
+    reasoning: str = Field(
+        default="",
+        description="Brief rationale for the routing decision"
+    )
+
+
 class ForgeOpsState(BaseModel):
     user_query: str
     thread_id: str  
@@ -70,6 +89,7 @@ class ForgeOpsState(BaseModel):
     guardrail_category: str = ""
 
     selected_agents: list[str] = Field(default_factory=list)
+    agent_queries: dict[str, str] = Field(default_factory=dict)
     investigation_plan: str= ""
 
     github_findings: list[Finding] = Field(default_factory=list)

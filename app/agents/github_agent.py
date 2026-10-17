@@ -27,6 +27,7 @@ agent = create_agent(
         system_prompt=GITHUB_AGENT_PROMPT,
         ).with_retry(stop_after_attempt=3)
 
+
 async def github_agent(state: ForgeOpsState,supervisor_query: str):
     result = await agent.ainvoke({
         "messages": [{"role": "user","content": supervisor_query}]

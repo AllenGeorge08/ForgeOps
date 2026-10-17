@@ -1,30 +1,21 @@
 # Meta-Muse later
 from dotenv import load_dotenv
 import os
-from langchain_huggingface import HuggingFaceEndpoint,ChatHuggingFace
 from langchain_groq import ChatGroq
-from langchain_nvidia_ai_endpoints import ChatNVIDIA
 from langchain_core.rate_limiters import InMemoryRateLimiter
-
+from langchain_openrouter import ChatOpenRouter
+import getpass 
+import os 
 
 load_dotenv()
 
 
-try:
-    GROQ_API_KEY = os.getenv("GROQ_API_KEY")
-    print("Groq API Key Loaded")
-    GROQ_API_KEY_2=os.getenv("GROQ_API_KEY_2")
-    if GROQ_API_KEY_2:
-        print(f"Second Groq API Key loaded")
-except PermissionError:
-    print("ERROR: GROQ API KEY NOT FOUND")
+if not os.getenv("OPENROUTER_API_KEY"):
+    os.environ["OPENROUTER_API_KEY"] = getpass.getpass("Enter your OpenRouter API key: ")
 
+if not os.getenv("GROQ_API_KEY"):
+    os.environ["GROQ_API_KEY"] = getpass.getpass("Enter your OpenRouter API key: ")
 
-try:
-    NVIDIA_API_KEY = os.getenv("NVIDIA_API_KEY")
-    print("Nvidia API Key Loaded")
-except PermissionError:
-    print("ERROR: NVIDIA API KEY NOT FOUND")
 
 guardrail_rate_limiter = InMemoryRateLimiter(
     requests_per_second=1.0,
@@ -32,36 +23,24 @@ guardrail_rate_limiter = InMemoryRateLimiter(
     max_bucket_size=5 #tight burst 
 )
 
-# All working,tested
-GUARDRAIL_MODEL = ChatGroq(model="qwen/qwen3.8-27b", max_retries=3, rate_limiter=guardrail_rate_limiter,max_tokens=300,reasoning_effort="low",api_key=GROQ_API_KEY)
-
-SUPERVISER_MODEL = ChatGroq(model="openai/gpt-oss-20b", max_retries=3,api_key=GROQ_API_KEY)
-
-FINAL_MODEL = ChatGroq(model="qwen/qwen3.8-27b", max_retries=3,api_key=GROQ_API_KEY)
-MEMORY_MODEL= ChatGroq(model="qwen/qwen3.8-27b", max_retries=3,api_key=GROQ_API_KEY)
-
-GITHUB_MODEL = ChatGroq(model="openai/gpt-oss-120b", max_retries=3)
-
-# CI_CD_MODEL = ChatOllama(model="minimax-m3:cloud", max_retries=3)
-ci_llm = HuggingFaceEndpoint(
-    repo_id="openai/gpt-oss-120b",
-    huggingfacehub_api_token=os.getenv("HF_TOKEN"),
-    provider="auto",
-    task="text_generation"
+SUPERVISOR_MODEL = ChatOpenRouter(
+    model="deepseek/deepseek-v4.1-flash-1017",
+    max_retries=3,
+    temperature=0.1,
 )
-CI_CD_MODEL=ChatHuggingFace(llm=ci_llm)
 
-memoryllm_model = ChatGroq(model="openai/gpt-oss-20b", max_retries=3,api_key=GROQ_API_KEY)
-SLACK_MODEL = ChatGroq(model="openai/gpt-oss-120b", max_retries=3,api_key=GROQ_API_KEY_2)
+FINAL_MODEL = ChatGroq(model="qwen/qwen3.8-27b", max_retries=3)
+MEMORY_MODEL= ChatGroq(model="qwen/qwen3.8-27b", max_retries=3)
 
-# MEMORY_MODEL = ChatNVIDIA(
-#     model="nvidia/nemotron-3-nano-omni-30b-a3b-reasoning",
-#     temperature=0.6,
-#     api_key=NVIDIA_API_KEY,
-# )
+GITHUB_MODEL = ChatOpenRouter(model="openai/gpt-oss-120b", max_retries=3)
+
+memoryllm_model = ChatGroq(model="openai/gpt-oss-20b", max_retries=3,)
+SLACK_MODEL = ChatOpenRouter(model="openai/gpt-oss-120b", max_retries=3)
+GUARDRAIL_MODEL = ChatOpenRouter(model="deepseek/deepseek-v4.1-flash-1017", max_retries=3,temperature=0.1,rate_limiter=guardrail_rate_limiter)
+CI_CD_MODEL = ChatGroq(model="openai/gpt-oss-120b", max_retries=3)
 
 # Need a stronger model here
-INVESTIGATION_MODEL = ChatGroq(model="openai/gpt-oss-120b", max_retries=3,api_key=GROQ_API_KEY_2) 
+INVESTIGATION_MODEL = ChatOpenRouter(model="deepseek/deepseek-v4.1-flash-1017", max_retries=3) 
 GITHUB_READ_TOOLS = [
     "pull_request_read",
     "list_pull_requests",

@@ -21,12 +21,9 @@ def evaluate_user_query(state: ForgeOpsState):
 
     return result
 
-
-# answer = evaluate_user_query("What should I do in my leg workout at the gym today..?")
-# vaguequestion_answer = evaluate_user_query("My github pr failed when i pushed an dockerfile in there, what do I do")
-if __name__ == "__main__":
-    valid_question_enough_context = evaluate_user_query("My github deployment failed at #421 for my repo forgeops")
-    # print(answer ,"\n")
-    # print(vaguequestion_answer)
-    print(valid_question_enough_context)
-    # print(type(valid_question_enough_context))
+# if __name__ == "__main__":
+#     sample_state = ForgeOpsState(user_query="My github deployment failed at #421 for my repo forgeops",thread_id="241")
+#     valid_question_enough_context = evaluate_user_query(sample_state)
+#     # print(answer ,"\n")
+#     # print(vaguequestion_answer)
+#     print(valid_question_enough_context)

@@ -109,6 +109,7 @@ async def test_agent():
     )
 
     answer =await investigation_agent(sample_state)
+    print(f"answer = {answer}")
     assert isinstance(answer,InvestigationResponse)
 
 
