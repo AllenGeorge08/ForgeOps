@@ -5,11 +5,19 @@ from langchain.tools import tool
 _slack = None
 
 
-def _ensure_slack():
+async def init_slack():
+    """Initialize the Slack MCP client. Call this during app startup."""
     global _slack
     if _slack is None:
-        import asyncio
-        _slack = asyncio.run(SlackTools().ainit())
+        _slack = await SlackTools().ainit()
+    return _slack
+
+
+def _ensure_slack():
+    if _slack is None:
+        raise RuntimeError(
+            "Slack MCP client not initialized. Call init_slack() during app startup."
+        )
     return _slack
 
 

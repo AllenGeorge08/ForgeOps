@@ -1,4 +1,3 @@
-import asyncio
 from app.mcp.github import GithubTools
 from langchain.tools import tool
 
@@ -6,10 +5,19 @@ from langchain.tools import tool
 _github = None
 
 
-def _ensure_github():
+async def init_github():
+    """Initialize the GitHub MCP client. Call this during app startup."""
     global _github
     if _github is None:
-        _github = asyncio.run(GithubTools().ainit())
+        _github = await GithubTools().ainit()
+    return _github
+
+
+def _ensure_github():
+    if _github is None:
+        raise RuntimeError(
+            "GitHub MCP client not initialized. Call init_github() during app startup."
+        )
     return _github
 
 

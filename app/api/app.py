@@ -5,8 +5,19 @@ from typing import Optional, List
 
 from app.config.state import ForgeOpsState, FinalizeAgentResponse
 from app.graph import graph
+from app.mcp.tools.github_tools import init_github
+from app.mcp.tools.slack_tools import init_slack
+from app.mcp.tools.github_actions_tools import init_github_actions
 
 application = FastAPI(title="ForgeOps API", version="1.0.0")
+
+
+@application.on_event("startup")
+async def startup():
+    """Initialize MCP clients before accepting requests."""
+    await init_github()
+    await init_slack()
+    await init_github_actions()
 
 
 class QueryRequest(BaseModel):

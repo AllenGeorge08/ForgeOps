@@ -5,11 +5,19 @@ from langchain.tools import tool
 _github_actions = None
 
 
-def _ensure_github_actions():
+async def init_github_actions():
+    """Initialize the GitHub Actions MCP client. Call this during app startup."""
     global _github_actions
     if _github_actions is None:
-        import asyncio
-        _github_actions = asyncio.run(GithubActions().ainit())
+        _github_actions = await GithubActions().ainit()
+    return _github_actions
+
+
+def _ensure_github_actions():
+    if _github_actions is None:
+        raise RuntimeError(
+            "GitHub Actions MCP client not initialized. Call init_github_actions() during app startup."
+        )
     return _github_actions
 
 

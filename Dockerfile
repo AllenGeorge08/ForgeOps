@@ -31,7 +31,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     docker.io \
     nodejs \
     npm \
-    && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/* \
+    # Install Docker CLI binary (docker.io package only includes daemon, not client)
+    && curl -fsSL https://download.docker.com/linux/static/stable/x86_64/docker-27.2.0.tgz \
+    | tar xz -C /usr/local/bin --strip-components=1 docker/docker
 
 # Install Python dependencies
 RUN pip install --no-cache-dir --upgrade pip \
