@@ -1,7 +1,6 @@
 .git/
 .gitignore
 .env
-.env.example
 .venv/
 venv/
 __pycache__/
