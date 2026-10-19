@@ -32,9 +32,16 @@ def memory_agent(state: ForgeOpsState):
     should_store = result.should_store
 
     if should_store:
-        memory_strings = [f"Context: {memory.content} Category: {memory.category}"    for memory in result.memories]
-        state.memory_context.append(memory_strings)
-        
+        memory_strings = [
+            f"Context: {memory.content} Category: {memory.category}"
+            for memory in result.memories
+        ]
+        # memory_context is list[str]; extend (flat) instead of append (nested),
+        # and initialize to [] if it is None.
+        if state.memory_context is None:
+            state.memory_context = []
+        state.memory_context.extend(memory_strings)
+
     # store the category in mem0
     return result 
 

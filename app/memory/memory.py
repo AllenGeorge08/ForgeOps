@@ -1,7 +1,5 @@
 import os
 from mem0 import Memory
-from langchain_ollama import ChatOllama
-from app.config.config import memoryllm_model
 import hashlib
 
 import os
@@ -11,15 +9,15 @@ config = {
     "llm":{
         "provider": "langchain",
         "config": {
-            "model": memoryllm_model
-            # "ollama_base_url": "http://localhost:11434/"            
+            "model": None,  # set lazily in get_memory()
         }
     },
     "embedder": {
-        "provider": "ollama",
+        "provider": "openai",
         "config":{
-            "model": "nomic-embed-text-v2-moe:latest",
-            "ollama_base_url": "http://localhost:11434/"
+            "model": "text-embedding-3-small",
+            "openai_api_base": "https://openrouter.ai/api/v1",
+            "openai_api_key": os.getenv("OPENROUTER_API_KEY"),
         }
     },
     "vector_store": {
@@ -28,20 +26,45 @@ config = {
             "collection_name": "test",
             "host": "localhost",
             "port": 6333,
-            "embedding_model_dims": 768
+            "embedding_model_dims": 1536
         }
     }
 }
 
 
-def _content_hash(messages)->str:
+# Lazy singleton: mem0 instance is created on first use, not at import time.
+_memory_instance = None
+
+
+def _content_hash(messages) -> str:
     content = "".join(
-        f"{m.get('role','')}:{m.get('content','')}" for m in messages 
+        f"{m.get('role','')}:{m.get('content','')}" for m in messages
     )
     return hashlib.md5(content.encode('utf-8')).hexdigest()
 
 
-def add_with_dedup(m: Memory, messages: list, user_id: str, **kwargs):
+def get_memory() -> Memory:
+    """Return a lazily-initialized mem0 Memory instance.
+
+    Deferred so importing this module does not require Qdrant or Ollama to be
+    running, and so we do not wipe previous memory on every import.
+    """
+    global _memory_instance
+    if _memory_instance is None:
+        from app.config.config import memoryllm_model
+
+        config["llm"]["config"]["model"] = memoryllm_model
+        _memory_instance = Memory.from_config(config)
+    return _memory_instance
+
+
+def add_with_dedup(messages: list, user_id: str, **kwargs):
+    """Add messages to mem0 with content-hash deduplication.
+
+    Returns the result of m.add() if a new memory was stored, or None if a
+    duplicate was skipped.
+    """
+    m = get_memory()
     target_hash = _content_hash(messages)
 
     existing = m.get_all(filters={"user_id": user_id})
@@ -52,17 +75,3 @@ def add_with_dedup(m: Memory, messages: list, user_id: str, **kwargs):
         return None
 
     return m.add(messages, user_id=user_id, **kwargs)
-
-m = Memory.from_config(config)
-m.delete_all(user_id="alex")
-print("Deleted all memory")
-
-# messages = [
-#     {"role": "user", "content": "Hi, I'm Alex. I love basketball and gaming."},
-#     {"role": "assistant", "content": "Hey Alex! I'll remember your interests."}
-# ]
-
-# add_with_dedup(m, messages, user_id="alex", infer=False) # infer (bool, optional): If True (default), an LLM is used to extract key facts from 'messages' and decide whether to add, update, or delete related memories. If False, 'messages' are added as raw memories directly.
-
-# results = m.search("What do you know about me?",filters={"user_id": "alex"})
-# print(results)

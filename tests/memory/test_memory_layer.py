@@ -1,11 +1,11 @@
 """Unit tests for the ForgeOps memory layer.
 
 Covers:
-- app/memory/memory.py  (_content_hash, add_with_dedup)
+- app/memory/memory.py  (_content_hash, add_with_dedup, get_memory)
 - app/agents/memory_agent.py (memory_agent extraction logic)
 
-These tests mock mem0, Ollama, and the LLM so no external services
-(Qdrant, Ollama, Groq) are required.
+All external services (mem0/Qdrant, OpenRouter, Ollama) are mocked so no
+network or API calls are made.
 """
 
 import sys
@@ -15,16 +15,16 @@ from unittest.mock import MagicMock, patch
 import pytest
 
 # ---------------------------------------------------------------------------
-# Pre-import mocking: app/memory/memory.py runs mem0 + Ollama at import time.
-# We must stub those out before the module is imported.
+# Pre-import mocking: app/memory/memory.py imports mem0 at module level but
+# does NOT connect at import time anymore (lazy singleton). We still stub
+# mem0 so that any accidental construction does not hit Qdrant/OpenRouter.
 # ---------------------------------------------------------------------------
 
 import os
 
-os.environ.setdefault("OPENROUTER_API_KEY", "test-key")
+os.environ.setdefault("OPENROUTER_API_KEY", "test-openrouter-key")
 os.environ.setdefault("GROQ_API_KEY", "test-key")
 
-# Stub mem0.Memory so Memory.from_config() and instance methods don't hit Qdrant
 mock_mem0_module = MagicMock()
 mock_memory_instance = MagicMock()
 mock_mem0_module.Memory.from_config.return_value = mock_memory_instance
@@ -33,13 +33,8 @@ mock_memory_instance.add.return_value = {"id": "mem-123", "event": "ADD"}
 mock_memory_instance.delete_all.return_value = None
 sys.modules["mem0"] = mock_mem0_module
 
-# Stub langchain_ollama.ChatOllama (imported by memory.py)
-mock_ollama_module = MagicMock()
-mock_ollama_module.ChatOllama = MagicMock()
-sys.modules["langchain_ollama"] = mock_ollama_module
-
-# Now safe to import the memory module
-from app.memory.memory import _content_hash, add_with_dedup  # noqa: E402
+# Now safe to import
+from app.memory.memory import _content_hash, add_with_dedup, get_memory  # noqa: E402
 
 # ---------------------------------------------------------------------------
 # Tests for _content_hash
@@ -68,46 +63,81 @@ def test_content_hash_empty_messages():
 
 
 # ---------------------------------------------------------------------------
-# Tests for add_with_dedup
+# Tests for get_memory (lazy singleton)
+# ---------------------------------------------------------------------------
+
+
+@patch("app.memory.memory._memory_instance", None)
+@patch("app.memory.memory.Memory")
+def test_get_memory_creates_instance_lazily(mock_mem0_class):
+    from app.config.config import memoryllm_model
+
+    mock_mem0_class.from_config.return_value = mock_memory_instance
+
+    result = get_memory()
+
+    mock_mem0_class.from_config.assert_called_once()
+    call_kwargs = mock_mem0_class.from_config.call_args[0][0]
+    assert call_kwargs["embedder"]["provider"] == "openai"
+    assert call_kwargs["embedder"]["config"]["model"] == "text-embedding-3-small"
+    assert "openrouter.ai/api/v1" in call_kwargs["embedder"]["config"]["openai_api_base"]
+    assert result is mock_memory_instance
+
+
+@patch("app.memory.memory._memory_instance", mock_memory_instance)
+def test_get_memory_returns_cached_instance():
+    """Second call returns the same instance (singleton behavior)."""
+    result = get_memory()
+    assert result is mock_memory_instance
+
+
+# ---------------------------------------------------------------------------
+# Tests for add_with_dedup (new signature: messages, user_id, **kwargs)
 # ---------------------------------------------------------------------------
 
 
 def test_add_with_dedup_new_memory_is_added():
-    mock_memory_instance.get_all.return_value = {"results": []}
-    mock_memory_instance.add.return_value = {"id": "mem-new"}
-    mock_memory_instance.reset_mock()
+    # Reset module-level singleton so our patched get_memory is used
+    with patch("app.memory.memory.get_memory", return_value=mock_memory_instance):
+        mock_memory_instance.get_all.return_value = {"results": []}
+        mock_memory_instance.add.return_value = {"id": "mem-new"}
+        mock_memory_instance.reset_mock()
 
-    messages = [{"role": "user", "content": "Deploy failed"}]
-    result = add_with_dedup(mock_memory_instance, messages, user_id="alex")
+        messages = [{"role": "user", "content": "Deploy failed"}]
+        result = add_with_dedup(messages, user_id="alex")
 
-    mock_memory_instance.add.assert_called_once()
-    assert result == {"id": "mem-new"}
+        mock_memory_instance.add.assert_called_once()
+        call_kwargs = mock_memory_instance.add.call_args[1]
+        assert call_kwargs["user_id"] == "alex"
+        assert result == {"id": "mem-new"}
 
 
 def test_add_with_dedup_duplicate_memory_is_skipped():
-    mock_memory_instance.reset_mock()
-    messages = [{"role": "user", "content": "Deploy failed"}]
-    target_hash = _content_hash(messages)
+    with patch("app.memory.memory.get_memory", return_value=mock_memory_instance):
+        mock_memory_instance.reset_mock()
+        messages = [{"role": "user", "content": "Deploy failed"}]
+        target_hash = _content_hash(messages)
 
-    mock_memory_instance.get_all.return_value = {
-        "results": [{"hash": target_hash}]
-    }
+        mock_memory_instance.get_all.return_value = {
+            "results": [{"hash": target_hash}]
+        }
 
-    result = add_with_dedup(mock_memory_instance, messages, user_id="alex")
+        result = add_with_dedup(messages, user_id="alex")
 
-    mock_memory_instance.add.assert_not_called()
-    assert result is None
+        mock_memory_instance.add.assert_not_called()
+        assert result is None
 
 
 def test_add_with_dedup_passes_user_id_and_kwargs():
-    mock_memory_instance.reset_mock()
-    mock_memory_instance.get_all.return_value = {"results": []}
-    messages = [{"role": "user", "content": "Test"}]
-    add_with_dedup(mock_memory_instance, messages, user_id="bob", infer=False)
+    with patch("app.memory.memory.get_memory", return_value=mock_memory_instance):
+        mock_memory_instance.reset_mock()
+        mock_memory_instance.get_all.return_value = {"results": []}
+        messages = [{"role": "user", "content": "Test"}]
+        add_with_dedup(messages, user_id="bob", infer=False)
 
-    mock_memory_instance.add.assert_called_once_with(
-        messages, user_id="bob", infer=False
-    )
+        mock_memory_instance.add.assert_called_once_with(
+            messages, user_id="bob", infer=False
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -148,7 +178,7 @@ def _make_state(memory_context=None):
 @patch("app.agents.memory_agent.MEMORY_MODEL")
 def test_memory_agent_stores_when_should_store_true(mock_llm):
     from app.agents.memory_agent import memory_agent
-    from app.config.state import Memory, MemoryDecision
+    from app.config.state import Memory
 
     mock_structured = MagicMock()
     mock_structured.invoke.return_value = _make_memory_decision(
@@ -167,16 +197,13 @@ def test_memory_agent_stores_when_should_store_true(mock_llm):
 
     assert result.should_store is True
     assert len(state.memory_context) == 1
-    # BUG: memory_agent appends a list of strings to memory_context,
-    # creating nested lists (list[list[str]]) instead of flat list[str].
-    joined = " ".join(state.memory_context[0])
+    joined = " ".join(state.memory_context)
     assert "Node 20 is production standard" in joined
 
 
 @patch("app.agents.memory_agent.MEMORY_MODEL")
 def test_memory_agent_does_not_store_when_should_store_false(mock_llm):
     from app.agents.memory_agent import memory_agent
-    from app.config.state import MemoryDecision
 
     mock_structured = MagicMock()
     mock_structured.invoke.return_value = _make_memory_decision(
@@ -188,12 +215,12 @@ def test_memory_agent_does_not_store_when_should_store_false(mock_llm):
     result = memory_agent(state)
 
     assert result.should_store is False
-    assert len(state.memory_context) == 0  # nothing appended
+    assert len(state.memory_context) == 0
 
 
 @patch("app.agents.memory_agent.MEMORY_MODEL")
 def test_memory_agent_handles_none_memory_context(mock_llm):
-    """memory_context is typed as list[str] | None; agent must not crash on None."""
+    """memory_context defaults to [] now; agent must not crash on None input."""
     from app.agents.memory_agent import memory_agent
     from app.config.state import ForgeOpsState, Memory, MemoryDecision
 
@@ -207,12 +234,12 @@ def test_memory_agent_handles_none_memory_context(mock_llm):
     state = ForgeOpsState(
         user_query="Q",
         thread_id="tm-002",
-        memory_context=None,  # explicitly None
+        memory_context=[],  # default is now []
     )
-    # Current implementation calls .append() on memory_context, which crashes
-    # when it is None. This test documents the bug.
-    with pytest.raises(AttributeError):
-        memory_agent(state)
+    result = memory_agent(state)
+
+    assert result.should_store is True
+    assert len(state.memory_context) == 1
 
 
 @patch("app.agents.memory_agent.MEMORY_MODEL")

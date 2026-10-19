@@ -104,7 +104,7 @@ class ForgeOpsState(BaseModel):
 
     final_response: str = ""
     errors: list[str]  = Field(default_factory=list)
-    memory_context: list[str]| None = None 
+    memory_context: list[str] = Field(default_factory=list)
 
 
 class InvestigationResponse(BaseModel):
