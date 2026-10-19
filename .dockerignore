@@ -1,0 +1,16 @@
+.git/
+.gitignore
+.env
+.env.example
+.venv/
+venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+.DS_Store
+observations.txt
+github_tools.txt
+all_tools.txt
+tests/
+__pycache__/
