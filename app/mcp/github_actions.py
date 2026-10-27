@@ -2,6 +2,7 @@ import asyncio
 import json 
 from app.mcp.client import select_tools,client
 from app.config.config import CICD_TOOLS
+from app.mcp.utils import safe_json_loads
 
 # Internal functions
 class GithubActions:
@@ -31,7 +32,7 @@ class GithubActions:
             "repo": repo_name,
             "perPage": perPage
         })
-        content = json.loads(results[0]["text"])
+        content = safe_json_loads(results[0]["text"], {})
         
         final_data = []
         for item in content.get("workflows",[]):
@@ -67,7 +68,7 @@ class GithubActions:
         results = await tool[0].ainvoke(payload)
 
         raw_text = results[0]["text"]
-        contents = json.loads(raw_text)
+        contents = safe_json_loads(raw_text, {})
         formatters = {
             "get_workflow": self._format_workflow,
             "get_workflow_run": self._format_workflow_run,
@@ -86,7 +87,7 @@ class GithubActions:
         tool = [tool for tool in self.github_tools if tool.name == "actions_list"]
         results = await tool[0].ainvoke(payload)
         raw_text = results[0]["text"]
-        return json.loads(raw_text)
+        return safe_json_loads(raw_text, {})
 
 
     async def get_job_logs(self, owner: str, repo: str, job_id: int = None, run_id: int = None,
@@ -118,14 +119,10 @@ class GithubActions:
         results = await tool[0].ainvoke(payload)
 
         raw_text = results[0]["text"]
-        raw_text = results[0]["text"]
-        try:
-            contents = json.loads(raw_text)
-        except json.JSONDecodeError:
-            return {"error": raw_text}
-
         print(f"DEBUG raw: {raw_text!r}")  # inspect shape before formatting, per the pattern above
-        contents = json.loads(raw_text)
+        contents = safe_json_loads(raw_text, {})
+        if not contents:
+            return {"error": f"Empty or invalid JSON response from GitHub Actions: {raw_text[:200]}"}
         formatted_data = {
             "run_id": contents.get("run_id"),
             "failed_jobs": contents.get("failed_jobs"),

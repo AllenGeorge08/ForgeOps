@@ -2,6 +2,7 @@ import asyncio
 import json 
 from app.mcp.client import select_tools,client
 from app.config.config import GITHUB_READ_TOOLS
+from app.mcp.utils import safe_json_loads
 
 # Internal functions
 class GithubTools:
@@ -39,7 +40,7 @@ class GithubTools:
         })
         
         raw_data = result[0]['text']
-        commit_data = json.loads(raw_data)
+        commit_data = safe_json_loads(raw_data, {})
 
         formatted_data = {
             "commit_id": commit_data["sha"],
@@ -105,7 +106,7 @@ class GithubTools:
         })
         final_data = []
         raw_text = results[0]["text"]
-        commits = json.loads(raw_text)
+        commits = safe_json_loads(raw_text, [])
 
         for item in commits:
             commit_info = item.get("commit",{})
@@ -148,7 +149,7 @@ class GithubTools:
         results = await tool[0].ainvoke(payload)
         raw_text = results[0]["text"]
         final_data = []
-        pull_requests= json.loads(raw_text)
+        pull_requests= safe_json_loads(raw_text, [])
         for item in pull_requests:
             user_info = item.get("user") or {}
             head_info = item.get("head") or {}
@@ -194,7 +195,7 @@ class GithubTools:
         })
         final_data = []
         raw_text  = results[0]["text"]
-        contents = json.loads(raw_text)
+        contents = safe_json_loads(raw_text, [])
         for item in contents:
             return_data = {
                 "type": item.get("type"),
@@ -223,7 +224,7 @@ class GithubTools:
         })
         final_result = []
         raw_text  = results[0]["text"]
-        contents = json.loads(raw_text)
+        contents = safe_json_loads(raw_text, [])
         for item in contents:
             return_data = {
                 "branch_name": item.get("name"),
@@ -270,7 +271,7 @@ class GithubTools:
             raise ValueError("search_code tool not found. Add it to GITHUB_READ_TOOLS")
 
         results = await tool[0].ainvoke({"query": full_query, "perPage": per_page})
-        contents = json.loads(results[0]["text"])
+        contents = safe_json_loads(results[0]["text"], {})
 
         final_data = []
         for item in contents.get("items", []):
@@ -319,7 +320,7 @@ class GithubTools:
         )
         
         raw_text = results[0]["text"]
-        contents = json.loads(raw_text)
+        contents = safe_json_loads(raw_text, {})
 
         final_data =[]
         for item in contents.get("items",[]):
@@ -346,7 +347,7 @@ class GithubTools:
         tool = [tool for tool in self.github_tools if tool.name == "search_issues"]
         results = await tool[0].ainvoke(payload)
         raw_text = results[0]["text"]
-        contents = json.loads(raw_text)
+        contents = safe_json_loads(raw_text, {})
         final_data = []
         for item in contents.get("items",[]):
             return_data = {
@@ -375,7 +376,7 @@ class GithubTools:
         tool = [tool for tool in self.github_tools if tool.name=="issue_read"]
         results = await tool[0].ainvoke(payload)
         raw_text = results[0]["text"]
-        contents = json.loads(raw_text)
+        contents = safe_json_loads(raw_text, [])
 
         final_data = []
         for item in contents:
@@ -435,7 +436,7 @@ class GithubTools:
 
         results = await tool[0].ainvoke(payload)
         raw_text = results[0]["text"]
-        contents = json.loads(raw_text)
+        contents = safe_json_loads(raw_text, {})
         final_data = []
         for item in contents.get("items", []):
             commit_info = item.get("commit") or {}

@@ -1,10 +1,9 @@
-from random import sample
-from textwrap import indent
+from app.mcp.tools.slack_tools import init_slack
 from app.agents.slack_agent import slack_agent
-from app.config.state import ForgeOpsState,Finding
+from app.config.state import ForgeOpsState, Finding
 import pytest
 import pytest_asyncio
-import json 
+import json
 
 sample_state = ForgeOpsState(
     user_query=(
@@ -84,19 +83,36 @@ additional Slack context is required.
 
 If no channel is provided, discover potentially relevant channels
 using the available Slack tools.
-# """
+"""
 
 
-@pytest.mark.asyncio 
+@pytest.mark.asyncio
 async def test_slack_agent():
-    finding = await slack_agent(sample_state,supervisor_q)
+    await init_slack()
+    finding = await slack_agent(sample_state, supervisor_q)
     print(finding)
-    assert isinstance(finding,Finding)
+    assert isinstance(finding, Finding)
     print("GITHUB FINDING...")
     print([f.model_dump_json() for f in sample_state.github_findings])
     print("CI-CD Finding...")
     print([f.model_dump_json() for f in sample_state.ci_cd_findings])
     print("SLACK FINDINGS")
     print([f.model_dump_json() for f in sample_state.slack_findings])
-    assert(finding.evidence or finding.errors)
+    assert (finding.evidence or finding.errors)
 
+
+@pytest.mark.asyncio
+async def test_slack_agent_channel_discovery():
+    """Test Slack agent discovering channels without a pre-specified channel ID."""
+    await init_slack()
+    state = ForgeOpsState(
+        user_query="Find Slack discussion about CI failures in the workspace",
+        thread_id="slack-test-002",
+        github_findings=[],
+        ci_cd_findings=[],
+        slack_findings=[],
+    )
+    query = "Search Slack for any discussion about CI workflow failures, database connection issues, or deployment errors across relevant channels."
+    finding = await slack_agent(state, query)
+    assert isinstance(finding, Finding)
+    assert finding.summary or finding.errors

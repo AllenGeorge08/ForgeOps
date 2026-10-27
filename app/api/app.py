@@ -48,6 +48,11 @@ def health_check():
     return {"status": "healthy", "service": "forgeops"}
 
 
+@application.get("/health")
+def health():
+    return {"status": "healthy", "service": "forgeops"}
+
+
 @application.post("/query", response_model=QueryResponse)
 async def run_investigation(request: QueryRequest):
     """Accept a user query, run it through the ForgeOps investigation graph,
@@ -65,6 +70,10 @@ async def run_investigation(request: QueryRequest):
         raise HTTPException(
             status_code=500, detail=f"Investigation failed: {str(e)}"
         )
+
+    # LangGraph returns a dict; convert back to ForgeOpsState for attribute access
+    if isinstance(final_state, dict):
+        final_state = ForgeOpsState(**final_state)
 
     # Determine overall status
     if not final_state.guardrail_allowed:

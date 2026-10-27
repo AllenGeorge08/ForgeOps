@@ -1,16 +1,13 @@
+from app.mcp.tools.github_actions_tools import init_github_actions
 from app.agents.github_ci_agent import ci_cd_agent
 from app.agents.github_agent import github_agent
-from app.config.state import ForgeOpsState,Finding
-import pytest
+from app.config.state import ForgeOpsState, Finding
 import pytest
 
-from app.config.state import ForgeOpsState, Finding
-from app.agents.github_agent import github_agent
-from app.agents.github_ci_agent import ci_cd_agent
 
 @pytest.mark.asyncio
 async def test_ci_cd_agent():
-
+    await init_github_actions()
     repo = "wassim249/fastapi-langgraph-agent-production-ready-template"
     commit = "62e59a49e5b50003523b11ed01929a661863c594"
 
@@ -79,3 +76,24 @@ STRICT RULES:
         cicd_finding.evidence
         or cicd_finding.errors
     )
+
+
+@pytest.mark.asyncio
+async def test_ci_cd_agent_run_investigation():
+    """Test CI/CD agent investigating a specific workflow run."""
+    await init_github_actions()
+    state = ForgeOpsState(
+        user_query="Investigate GitHub Actions run 32956808292 failure",
+        thread_id="cicd-test-001",
+    )
+    query = (
+        "Investigate GitHub Actions workflow run 32956808292 "
+        "in wassim249/fastapi-langgraph-agent-production-ready-template. "
+        "Retrieve the run status, failed jobs, steps, and logs."
+    )
+    finding = await ci_cd_agent(state, query)
+    assert isinstance(finding, Finding)
+    assert finding.summary or finding.errors
+
+
+# 62e59a49e5b50003523b11ed01929a661863c594

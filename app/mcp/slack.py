@@ -2,6 +2,7 @@ import asyncio
 import json 
 from app.mcp.client import select_tools,client
 from app.config.config import SLACK_READ_TOOLS
+from app.mcp.utils import safe_json_loads
 
 # Internal functions
 class SlackTools:
@@ -35,7 +36,7 @@ class SlackTools:
         result = await tool[0].ainvoke(payload)
                 
         raw_data = result[0]['text']
-        contents = json.loads(raw_data)
+        contents = safe_json_loads(raw_data, {})
         channels = contents.get("channels",[]) if isinstance(contents,dict) else contents
         final_data = []
         for ch in channels:
@@ -68,7 +69,7 @@ class SlackTools:
         }
         result = await tool[0].ainvoke(payload)
         raw_data = result[0]['text']
-        contents = json.loads(raw_data)
+        contents = safe_json_loads(raw_data, {})
         if contents.get("ok") == False:
             raise ValueError("Your bot is not added to the channel yet. Add by /invite @your-bot-name")
 
@@ -93,7 +94,7 @@ class SlackTools:
         }
         result = await tool[0].ainvoke(payload)
         raw_data = result[0]['text']
-        contents = json.loads(raw_data)
+        contents = safe_json_loads(raw_data, {})
         final_data=[]
         for member in contents.get("members", []):
             if member.get("deleted"):
@@ -132,7 +133,7 @@ class SlackTools:
             raise ValueError("get thread replies tool not found")
 
         results = await tool[0].ainvoke(payload)
-        contents = json.loads(results[0]["text"])
+        contents = safe_json_loads(results[0]["text"], {})
 
         if not contents.get("ok", True):
             raise RuntimeError(f"Slack error: {contents.get('error')}")

@@ -25,13 +25,16 @@ async def investigation_agent(state: ForgeOpsState):
      result = await agent.ainvoke({
         "messages": [{"role": "user","content": query}]
      })
-     final_answer = await structured_llm.ainvoke(f"Convert the given response into a InvestigationResponse Schema. {result["messages"][-1].content}")
+     response_content = result["messages"][-1].content
+     final_answer = await structured_llm.ainvoke(
+         f"Convert the given response into a InvestigationResponse Schema. {response_content}"
+     )
      
      state.investigation = final_answer.investigation 
      state.root_cause = final_answer.root_cause 
      state.evidence.append(final_answer.evidence)
      state.proposed_action = final_answer.proposed_action
-     return final_answer
+     return {}
    except Exception as e:
         print(f"Investigation Agent Ran Into an error : {e}")
         raise e 

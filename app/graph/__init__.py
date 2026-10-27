@@ -36,18 +36,20 @@ def guardrail_node(state: ForgeOpsState) -> dict:
 async def dispatch_node(state: ForgeOpsState) -> dict:
     """Invoke the specialist agents selected by the supervisor.
 
-    Agents run sequentially (github -> cicd -> slacks subset of selected).
-    Each agent mutates state in place (findings lists); this node returns
-    an empty update since the state object is shared.
+    Agents run sequentially (github -> cicd -> slack). If one agent fails,
+    the error is recorded in state.errors and the next agent still runs.
     """
     for agent_name in state.selected_agents:
         query = state.agent_queries.get(agent_name, state.user_query)
-        if agent_name == "github":
-            await github_agent(state, query)
-        elif agent_name == "cicd":
-            await ci_cd_agent(state, query)
-        elif agent_name == "slack":
-            await slack_agent(state, query)
+        try:
+            if agent_name == "github":
+                await github_agent(state, query)
+            elif agent_name == "cicd":
+                await ci_cd_agent(state, query)
+            elif agent_name == "slack":
+                await slack_agent(state, query)
+        except Exception as e:
+            state.errors.append(f"{agent_name} agent failed: {str(e)}")
     return {}
 
 
