@@ -212,6 +212,20 @@ STRICT RULES
 9. If the request might be relevant but lacks enough information,
    return "clarify".
 
+6. When a request mentions a CI/CD workflow run, deployment, or pipeline failure
+   AND references a repository (owner/repo, repo name, PR, commit, SHA, or "in the repo"),
+   classify as "cross_source_investigation" — not just "ci_cd" — because the
+   investigation will need GitHub repository evidence (commits, PRs, changed files)
+   alongside CI/CD evidence.
+
+7. When a request mentions a CI/CD workflow run, deployment, or pipeline failure
+   AND mentions Slack, discussion, engineers, team, or chat, classify as
+   "cross_source_investigation".
+
+8. A CI/CD-only classification ("ci_cd") is only appropriate when the request
+   mentions a CI/CD run/failure WITHOUT referencing a repository, PR, commit,
+   SHA, or Slack discussion.
+
 10. Return ONLY the structured output defined below.
    Do not include markdown, explanations, or additional text.
 

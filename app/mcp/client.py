@@ -39,8 +39,8 @@ client = MultiServerMCPClient(
                 "run",
                 "-i",
                 "--rm",
-                "-e", "GITHUB_PERSONAL_ACCESS_TOKEN",
-                "-e", "GITHUB_TOOLSETS",
+                "-e", f"GITHUB_PERSONAL_ACCESS_TOKEN={GITHUB_ACCESS_TOKEN}",
+                "-e", f"GITHUB_TOOLSETS=repos,issues,pull_requests,users,actions",
                 "ghcr.io/github/github-mcp-server",
             ],
             "env": {

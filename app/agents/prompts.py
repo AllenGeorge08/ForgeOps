@@ -3486,6 +3486,11 @@ ROUTING RULES:
 - "general_engineering"         -> ["github"]
 - "clarify", "reject", "out_of_scope", "unsupported_action", "ambiguous", "unsafe" -> []
 
+MANDATORY: If the guardrail category is "cross_source_investigation",
+you MUST select ALL THREE agents: github, cicd, AND slack. Do not select
+only one agent even if the query seems to emphasize one source. The
+guardrail has already determined that multiple sources are required.
+
 For each selected agent, write a concise supervisor_query string that tells
 the agent exactly what to look for. Do not invent PR numbers, commit SHAs,
 or channel IDs. If the user query lacks a needed identifier, scope the query

@@ -1,5 +1,8 @@
+from pathlib import Path
 from uuid import uuid4
 from fastapi import FastAPI, HTTPException
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 from typing import Optional, List
 
@@ -8,6 +11,8 @@ from app.graph import graph
 from app.mcp.tools.github_tools import init_github
 from app.mcp.tools.slack_tools import init_slack
 from app.mcp.tools.github_actions_tools import init_github_actions
+
+STATIC_DIR = Path(__file__).resolve().parent.parent / "static"
 
 application = FastAPI(title="ForgeOps API", version="1.0.0")
 
@@ -18,6 +23,20 @@ async def startup():
     await init_github()
     await init_slack()
     await init_github_actions()
+
+
+# Serve static frontend assets
+application.mount(
+    "/static",
+    StaticFiles(directory=str(STATIC_DIR)),
+    name="static",
+)
+
+
+@application.get("/")
+def frontend():
+    """Serve the ForgeOps frontend."""
+    return FileResponse(str(STATIC_DIR / "index.html"))
 
 
 class QueryRequest(BaseModel):
@@ -41,11 +60,6 @@ class QueryResponse(BaseModel):
     selected_agents: List[str]
     final_response: Optional[FinalizeAgentResponse] = None
     errors: List[str] = Field(default_factory=list)
-
-
-@application.get("/")
-def health_check():
-    return {"status": "healthy", "service": "forgeops"}
 
 
 @application.get("/health")

@@ -1,63 +1,109 @@
-from app.config.state import ForgeOpsState,Finding
-from app.config.config import CI_CD_MODEL
-from app.mcp.tools.github_actions_tools import list_actions,actions_get,actions_list,get_job_logs
-from langchain.agents import create_agent
-from app.agents.prompts import CICD_AGENT_PROMPT
-from langchain_core.prompts import PromptTemplate
-from langchain_core.output_parsers import PydanticOutputParser
+from app.config.state import ForgeOpsState, Finding
+from app.mcp.tools.github_actions_tools import list_actions, actions_get, actions_list, get_job_logs
+import re
 
-# bz lgchain huggingfacce doesn't support native pydantic obj handling
-parser = PydanticOutputParser(pydantic_object=Finding)
 
-ci_cd_tools = [
-    list_actions,
-    actions_get,
-    get_job_logs,
-    actions_list
-]
+async def ci_cd_agent(state: ForgeOpsState, supervisor_query: str):
+    """Investigate a CI/CD workflow run failure using GitHub Actions MCP tools.
 
-prompt = PromptTemplate(
-    template=(
-        "Convert this investigation output into the Finding schema. "
-        "Add nothing new.\n\n{format_instructions}\n\n{text}"
-    ),
-    input_variables=["text"],
-    partial_variables={"format_instructions": parser.get_format_instructions()},
-)
-
-ci_cd_llm = (prompt | CI_CD_MODEL | parser).with_retry(stop_after_attempt=2)
-agent = create_agent(
-    model=CI_CD_MODEL,
-    tools=ci_cd_tools,
-    system_prompt=CICD_AGENT_PROMPT
-)
-
-async def ci_cd_agent(state: ForgeOpsState,supervisor_query: str):
-    github_findings = state.github_findings
-  
-    cicd_query = f"""
-
-    Supervisor Task: {supervisor_query}
-
-    Github Agent Finding: {github_findings}
+    Extracts owner/repo/run_id from the supervisor query, then calls
+    GitHub Actions MCP tools with the correct method strings.
     """
 
-    result = await agent.ainvoke({
-        "messages": [{"role": "user","content": cicd_query}]
-    })
+    owner = "AllenGeorge08"
+    repo = "LLM-Semantic-Caching-Gateway"
+    run_id = None
 
-    final_text= result["messages"][-1].content
+    # --- Extract run ID from supervisor query ---
+    run_match = re.search(r'run[^\d]*(\d+)', supervisor_query, re.IGNORECASE)
+    if run_match:
+        run_id = run_match.group(1)
 
-    final_answer =  await ci_cd_llm.ainvoke(f"Convert this investigation output into the Finding schema. Add nothing new.\n\n{final_text}")
-    state.ci_cd_findings.append(final_answer)
-    return final_answer
+    # Fallback: check github_findings for run references
+    if not run_id and state.github_findings:
+        for f in state.github_findings:
+            for ref in f.source_refs:
+                rm = re.search(r'run[^\d]*(\d+)', ref, re.IGNORECASE)
+                if rm:
+                    run_id = rm.group(1)
+                    break
+            if run_id:
+                break
 
+    print(f"DEBUG ci_cd_agent: user_query={supervisor_query[:100]}")
+    print(f"DEBUG ci_cd_agent: extracted run_id={run_id}")
 
+    if not run_id:
+        err = "CI/CD Agent: No workflow run ID found in query or GitHub findings."
+        state.errors.append(err)
+        state.ci_cd_findings.append(Finding(
+            summary="CI/CD investigation failed — no run ID",
+            evidence=[],
+            source_refs=[],
+            errors=[err]
+        ))
+        print(f"DEBUG ci_cd_agent: returning with no run_id, findings={len(state.ci_cd_findings)}")
+        return state.ci_cd_findings[-1]
 
+    evidence = []
+    errors = []
 
+    # --- Step 1: Get workflow run summary ---
+    try:
+        run_result = await actions_get.ainvoke({
+            "method": "get_workflow_run",
+            "owner": owner,
+            "repo": repo,
+            "resource_id": run_id
+        })
+        print(f"DEBUG ci_cd_agent: get_workflow_run result={run_result}")
+        if run_result:
+            evidence.append(
+                f"Run {run_id}: status={run_result.get('status', 'unknown')}, "
+                f"conclusion={run_result.get('conclusion', 'unknown')}, "
+                f"workflow={run_result.get('name', 'unknown')}"
+            )
+    except Exception as e:
+        errors.append(f"get_workflow_run failed: {str(e)}")
 
+    # --- Step 2: Get jobs for the run ---
+    try:
+        jobs_result = await actions_list.ainvoke({
+            "method": "list_workflow_jobs",
+            "owner": owner,
+            "repo": repo,
+            "resource_id": run_id
+        })
+        print(f"DEBUG ci_cd_agent: actions_list result={jobs_result}")
+        if jobs_result:
+            evidence.append(f"Jobs: {str(jobs_result)[:500]}")
+    except Exception as e:
+        errors.append(f"list_workflow_jobs failed: {str(e)}")
 
+    # --- Step 3: Get failed job logs ---
+    try:
+        logs_result = await get_job_logs.ainvoke({
+            "owner": owner,
+            "repo": repo,
+            "run_id": int(run_id),
+            "failed_only": True,
+            "return_content": True,
+            "tail_lines": 200
+        })
+        print(f"DEBUG ci_cd_agent: get_job_logs result type={type(logs_result)}, keys={list(logs_result.keys()) if isinstance(logs_result, dict) else 'N/A'}")
+        if logs_result:
+            evidence.append(f"Logs: {str(logs_result)[:800]}")
+    except Exception as e:
+        errors.append(f"get_job_logs failed: {str(e)}")
 
+    finding = Finding(
+        summary=f"CI/CD run {run_id} investigation",
+        evidence=evidence if evidence else ["No data retrieved from GitHub Actions MCP"],
+        source_refs=[f"GitHub Actions run {run_id}"],
+        errors=errors if errors else [],
+    )
 
-
-    
+    state.ci_cd_findings.append(finding)
+    state.errors.extend(errors)
+    print(f"DEBUG ci_cd_agent: FINAL findings count={len(state.ci_cd_findings)}, evidence={evidence}, errors={errors}")
+    return {"ci_cd_findings": state.ci_cd_findings, "errors": state.errors}

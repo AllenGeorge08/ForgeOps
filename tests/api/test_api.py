@@ -33,11 +33,19 @@ def _fake_state(guardrail_allowed: bool = True) -> ForgeOpsState:
 
 def test_health_check():
     client = TestClient(application)
-    response = client.get("/")
+    response = client.get("/health")
     assert response.status_code == 200
     data = response.json()
     assert data["status"] == "healthy"
     assert data["service"] == "forgeops"
+
+
+def test_frontend_root_returns_html():
+    client = TestClient(application)
+    response = client.get("/")
+    assert response.status_code == 200
+    assert "text/html" in response.headers.get("content-type", "")
+    assert "forgeops" in response.text.lower()
 
 
 def test_query_endpoint_success():
@@ -96,6 +104,41 @@ def test_query_endpoint_missing_thread_id_generates_one():
     data = response.json()
     assert data["thread_id"] is not None
     assert len(data["thread_id"]) > 0
+
+
+def test_query_endpoint_thread_id_always_returned():
+    """thread_id is always returned: provided values are echoed (session
+    continuity), missing values are auto-generated."""
+
+    def echo_thread_id(state):
+        """Mock that returns the input state unchanged (echoes thread_id)."""
+        return state
+
+    fake_state = _fake_state(guardrail_allowed=True)
+
+    # Provided thread_id is echoed back
+    with patch(
+        "app.api.app.graph.ainvoke", new=AsyncMock(side_effect=echo_thread_id)
+    ):
+        client = TestClient(application)
+        response = client.post(
+            "/query",
+            json={"user_query": "Session continuity test", "thread_id": "existing-session-42"},
+        )
+    assert response.status_code == 200
+    data = response.json()
+    assert data["thread_id"] == "existing-session-42"
+
+    # Missing thread_id is auto-generated and returned
+    with patch(
+        "app.api.app.graph.ainvoke", new=AsyncMock(side_effect=echo_thread_id)
+    ):
+        response = client.post("/query", json={"user_query": "New session"})
+    assert response.status_code == 200
+    data = response.json()
+    assert data["thread_id"] is not None
+    assert len(data["thread_id"]) > 0
+    assert data["thread_id"] != "existing-session-42"
 
 
 def test_query_endpoint_graph_error():

@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ForgeOps — Engineering Investigation Copilot</title>
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+  <canvas id="rain"></canvas>
+
+  <div class="shell">
+    <header class="header">
+      <div class="prompt">root@forgeops:~#</div>
+      <h1 class="title">ForgeOps</h1>
+      <p class="subtitle">AI Engineering Investigation Copilot</p>
+    </header>
+
+    <div class="thread-bar">
+      <span class="thread-label">thread:</span>
+      <input
+        id="threadInput"
+        type="text"
+        placeholder="existing thread id (leave blank for new)"
+        class="thread-input"
+      />
+      <span id="threadId" class="thread-value">—</span>
+      <button id="newThread" class="btn-new">new session</button>
+    </div>
+
+    <div class="investigate">
+      <textarea
+        id="queryInput"
+        placeholder="e.g. Why did deployment #821 fail after PR #482?"
+        rows="3"
+      ></textarea>
+      <button id="submitBtn" class="btn-submit">investigate</button>
+    </div>
+
+    <div id="loading" class="loading hidden">
+      <span class="cursor">&gt;</span>
+      <span class="msg">investigating<span class="dots">...</span></span>
+    </div>
+
+    <div id="output" class="output hidden"></div>
+  </div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>

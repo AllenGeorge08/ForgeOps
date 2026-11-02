@@ -39,18 +39,28 @@ async def dispatch_node(state: ForgeOpsState) -> dict:
     Agents run sequentially (github -> cicd -> slack). If one agent fails,
     the error is recorded in state.errors and the next agent still runs.
     """
+    updates = {}
     for agent_name in state.selected_agents:
         query = state.agent_queries.get(agent_name, state.user_query)
         try:
             if agent_name == "github":
-                await github_agent(state, query)
+                result = await github_agent(state, query)
+                if isinstance(result, dict):
+                    updates.update(result)
             elif agent_name == "cicd":
-                await ci_cd_agent(state, query)
+                result = await ci_cd_agent(state, query)
+                if isinstance(result, dict):
+                    updates.update(result)
             elif agent_name == "slack":
-                await slack_agent(state, query)
+                result = await slack_agent(state, query)
+                if isinstance(result, dict):
+                    updates.update(result)
         except Exception as e:
             state.errors.append(f"{agent_name} agent failed: {str(e)}")
-    return {}
+            if "errors" not in updates:
+                updates["errors"] = []
+            updates["errors"].append(f"{agent_name} agent failed: {str(e)}")
+    return updates
 
 
 def after_guardrail(state: ForgeOpsState) -> Literal["supervisor", END]:

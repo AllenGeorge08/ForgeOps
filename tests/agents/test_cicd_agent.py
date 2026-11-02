@@ -1,4 +1,5 @@
 from app.mcp.tools.github_actions_tools import init_github_actions
+from app.mcp.tools.github_tools import init_github
 from app.agents.github_ci_agent import ci_cd_agent
 from app.agents.github_agent import github_agent
 from app.config.state import ForgeOpsState, Finding
@@ -7,6 +8,7 @@ import pytest
 
 @pytest.mark.asyncio
 async def test_ci_cd_agent():
+    await init_github()
     await init_github_actions()
     repo = "wassim249/fastapi-langgraph-agent-production-ready-template"
     commit = "62e59a49e5b50003523b11ed01929a661863c594"
@@ -89,7 +91,7 @@ async def test_ci_cd_agent_run_investigation():
     query = (
         "Investigate GitHub Actions workflow run 32956808292 "
         "in wassim249/fastapi-langgraph-agent-production-ready-template. "
-        "Retrieve the run status, failed jobs, steps, and logs."
+        "Retrieve run status and failed job logs."
     )
     finding = await ci_cd_agent(state, query)
     assert isinstance(finding, Finding)

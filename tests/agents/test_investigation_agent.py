@@ -117,7 +117,11 @@ async def test_agent():
 
     answer = await investigation_agent(sample_state)
     print(f"answer = {answer}")
-    assert isinstance(answer, InvestigationResponse)
+    assert answer == {}  # returns empty dict to avoid LangGraph state type conflict
+    assert sample_state.investigation
+    assert sample_state.root_cause
+    assert isinstance(sample_state.evidence, list)
+    assert sample_state.proposed_action is not None
 
 
 @pytest.mark.asyncio
@@ -150,5 +154,6 @@ async def test_agent_partial_evidence():
 
     answer = await investigation_agent(state)
     print(f"answer = {answer}")
-    assert isinstance(answer, InvestigationResponse)
-    assert answer.investigation or answer.root_cause or answer.errors
+    assert answer == {}  # returns empty dict
+    assert state.investigation or state.root_cause or state.errors
+    assert isinstance(state.evidence, list)

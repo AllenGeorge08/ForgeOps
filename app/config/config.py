@@ -24,13 +24,13 @@ guardrail_rate_limiter = InMemoryRateLimiter(
 )
 
 SUPERVISOR_MODEL = ChatOpenRouter(
-    model="deepseek/deepseek-v4.1-flash-1017",
+    model="openai/gpt-6.1-terra-pro",
     max_retries=3,
     temperature=0.1,
 )
 
 FINAL_MODEL = ChatGroq(model="qwen/qwen3.8-27b", max_retries=3)
-MEMORY_MODEL= ChatGroq(model="qwen/qwen3.8-27b", max_retries=3)
+MEMORY_MODEL= ChatOpenRouter(model="openai/gpt-oss-120b", max_retries=3)
 
 GITHUB_MODEL = ChatOpenRouter(model="openai/gpt-oss-120b", max_retries=3)
 
