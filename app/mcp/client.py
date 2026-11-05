@@ -6,15 +6,15 @@ from dotenv import load_dotenv
 load_dotenv()
 
 
-GITHUB_ACCESS_TOKEN = os.getenv("GITHUB_ACCESS_TOKEN")
+GH_ACCESS_TOKEN = os.getenv("GH_ACCESS_TOKEN")
 SLACK_AUTH_TOKEN = os.getenv("SLACK_BOT_AUTH_TOKEN")
 SLACK_TEAM_ID = os.getenv("SLACK_TEAM_ID")
 
 # Validate tokens but don't crash at import time — allow container to start
 # and fail gracefully at runtime if tokens are truly missing.
 _missing = []
-if not GITHUB_ACCESS_TOKEN:
-    _missing.append("GITHUB_ACCESS_TOKEN")
+if not GH_ACCESS_TOKEN:
+    _missing.append("GH_ACCESS_TOKEN")
 if not SLACK_AUTH_TOKEN:
     _missing.append("SLACK_BOT_AUTH_TOKEN")
 if not SLACK_TEAM_ID:
@@ -39,12 +39,12 @@ client = MultiServerMCPClient(
                 "run",
                 "-i",
                 "--rm",
-                "-e", f"GITHUB_PERSONAL_ACCESS_TOKEN={GITHUB_ACCESS_TOKEN}",
+                "-e", f"GITHUB_PERSONAL_ACCESS_TOKEN={GH_ACCESS_TOKEN}",
                 "-e", f"GITHUB_TOOLSETS=repos,issues,pull_requests,users,actions",
                 "ghcr.io/github/github-mcp-server",
             ],
             "env": {
-                "GITHUB_PERSONAL_ACCESS_TOKEN": GITHUB_ACCESS_TOKEN or "",
+                "GITHUB_PERSONAL_ACCESS_TOKEN": GH_ACCESS_TOKEN or "",
                 "GITHUB_TOOLSETS": "repos,issues,pull_requests,users,actions",
                 "PATH": os.getenv("PATH", ""),
             },

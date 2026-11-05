@@ -89,7 +89,7 @@ Required variables:
 |----------|-------------|----------|
 | `GROQ_API_KEY` | Groq API key (used for FINAL_MODEL and MEMORY_MODEL) | Yes |
 | `OPENROUTER_API_KEY` | OpenRouter API key (used for GITHUB_MODEL, SLACK_MODEL, CI_CD_MODEL, SUPERVISOR_MODEL, INVESTIGATION_MODEL, GUARDRAIL_MODEL) | Yes |
-| `GITHUB_ACCESS_TOKEN` | GitHub Personal Access Token (for GitHub MCP server) | Yes |
+| `GH_ACCESS_TOKEN` | GitHub Personal Access Token (for GitHub MCP server) | Yes |
 | `SLACK_BOT_AUTH_TOKEN` | Slack Bot Token (for Slack MCP server) | Yes |
 | `SLACK_TEAM_ID` | Slack Team ID (for Slack MCP server) | Yes |
 
