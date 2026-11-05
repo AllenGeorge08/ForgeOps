@@ -24,7 +24,7 @@ guardrail_rate_limiter = InMemoryRateLimiter(
 )
 
 SUPERVISOR_MODEL = ChatOpenRouter(
-    model="openai/gpt-6.1-terra-pro",
+    model="anthropic/claude-sonnet-5.5",
     max_retries=3,
     temperature=0.1,
 )
@@ -32,12 +32,12 @@ SUPERVISOR_MODEL = ChatOpenRouter(
 FINAL_MODEL = ChatGroq(model="qwen/qwen3.8-27b", max_retries=3)
 MEMORY_MODEL= ChatOpenRouter(model="openai/gpt-oss-120b", max_retries=3)
 
-GITHUB_MODEL = ChatOpenRouter(model="openai/gpt-oss-120b", max_retries=3)
+GITHUB_MODEL = ChatOpenRouter(model="openai/gpt-6.1-terra-pro", max_retries=3)
 
 memoryllm_model = ChatGroq(model="openai/gpt-oss-20b", max_retries=3,)
-SLACK_MODEL = ChatOpenRouter(model="openai/gpt-oss-120b", max_retries=3)
+SLACK_MODEL = ChatOpenRouter(model="openai/gpt-6.1-terra-pro", max_retries=3)
 GUARDRAIL_MODEL = ChatOpenRouter(model="deepseek/deepseek-v4.1-flash-1017", max_retries=3,temperature=0.1,rate_limiter=guardrail_rate_limiter)
-CI_CD_MODEL = ChatOpenRouter(model="meta-llama/llama-3.3-70b", max_retries=3)
+CI_CD_MODEL = ChatOpenRouter(model="openai/gpt-6.1-terra-pro", max_retries=3)
 
 # Need a stronger model here
 INVESTIGATION_MODEL = ChatOpenRouter(model="deepseek/deepseek-v4.1-flash-1017", max_retries=3) 
